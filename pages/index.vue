@@ -2,7 +2,7 @@
   <div>
     <AdminPageHeader>
       <template #header>
-        <a-page-header title="Menú principal" style="padding: 0px" />
+        <a-page-header :title="'¡Bienvenido ' + $auth.user.name + '!'" style="padding: 0px" />
       </template>
     </AdminPageHeader>
     <div class="dashboard-page-content-container">
@@ -242,21 +242,21 @@ export default {
           tags: ['cool', 'teacher'],
         },
         {
-          key: '3',
+          key: '4',
           name: 'Joe Black',
           age: 32,
           address: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',
           tags: ['cool', 'teacher'],
         },
         {
-          key: '3',
+          key: '5',
           name: 'Joe Black',
           age: 32,
           address: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',
           tags: ['cool', 'teacher'],
         },
         {
-          key: '3',
+          key: '6',
           name: 'Joe Black',
           age: 32,
           address: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',

@@ -1,7 +1,9 @@
-export const state = () => ({})
+export const getters = {
+  isAuthenticated(state) {
+    return state.auth.loggedIn
+  },
 
-export const getters = {}
-
-export const mutations = {}
-
-export const actions = {}
+  loggedInUser(state) {
+    return state.auth.user
+  },
+}

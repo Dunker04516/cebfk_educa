@@ -1,14 +1,12 @@
 <template>
   <div>
     <a-config-provider :locale="locale">
-      <a-layout id="components-layout-demo-custom-trigger">
-        <a-layout-sider
-          style="
+      <a-layout v-if="$auth.loggedIn" id="components-layout-demo-custom-trigger">
+        <a-layout-sider style="
             width: fit-content;
             min-width: fit-content;
             max-width: fit-content;
-          "
-        >
+          ">
           <Sidebar :collapsed="collapsed"></Sidebar>
         </a-layout-sider>
         <a-layout>
@@ -16,6 +14,7 @@
           <Nuxt />
         </a-layout>
       </a-layout>
+      <Login v-else></Login>
     </a-config-provider>
   </div>
 </template>
@@ -24,14 +23,16 @@
 import Sidebar from './Sidebar.vue'
 import TopBar from './TopBar.vue'
 import es_ES from 'ant-design-vue/lib/locale-provider/es_ES'
+import Login from '../components/auth/Login.vue'
 export default {
+  middleware: 'auth',
   data() {
     return {
       locale: es_ES,
       collapsed: false,
     }
   },
-  components: { TopBar, Sidebar },
+  components: { TopBar, Sidebar, Login },
 }
 </script>
 

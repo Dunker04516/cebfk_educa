@@ -21,7 +21,7 @@
             <a-icon type="home" :style="{ fontSize: '16px' }" />
             <span>Menú principal</span>
           </a-menu-item>
-          <a-menu-item>
+          <a-menu-item @click.native="$auth.logout()">
             <a-icon type="logout" :style="{ fontSize: '16px' }" />
             <span>Cerrar sesión</span>
           </a-menu-item>
@@ -61,7 +61,7 @@ export default {
 
 <style lang="scss">
 .main-sidebar .ps {
-  height: calc(100vh - 62px);
+  height: calc(100vh - 50px);
 }
 
 @media only screen and (max-width: 1150px) {}
