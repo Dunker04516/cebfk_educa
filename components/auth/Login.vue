@@ -110,7 +110,7 @@ export default {
 }
 
 .login-img-logo {
-  width: 350px;
+  width: 250px;
 }
 
 .container-content {
