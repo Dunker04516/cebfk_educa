@@ -1,0 +1,71 @@
+$light: #fff;
+$dark: #000;
+$transparent: rgba(255, 255, 255, 0);
+
+$primary-color: #CF0B0B;
+$primary-contrast: #d42323;
+$primary-dark: #a60909;
+
+$secondary-color: #d42323;
+$secondary-contrast: #e26d6d;
+
+$tertiary-color: #665c53;
+$tertiary-contrast: #a3a3a3;
+
+@font-face {
+  font-family: 'Nunito';
+  src: local('Nunito'), url(~assets/fonts/Nunito.ttf) format('truetype');
+}
+
+html,
+* {
+  font-family: 'Nunito';
+}
+
+.eco-primary {
+  color: $primary-color;
+}
+
+.eco-secondary {
+  color: $secondary-color;
+}
+
+.bg-eco-transparent {
+  background-color: $transparent;
+}
+
+.bg-eco-light {
+  background-color: $light;
+}
+
+.bg-eco-light>i {
+  color: $secondary-color;
+}
+
+.bg-eco-light>i:hover {
+  color: $primary-color;
+}
+
+.bg-eco-primary {
+  background-color: $primary-color;
+}
+
+.bg-eco-primary-contrast {
+  background-color: $primary-contrast;
+}
+
+.ant-menu-dark .ant-menu-inline.ant-menu-sub {
+  background-color: $primary-dark;
+  box-shadow: none;
+}
+
+.ant-menu-dark .ant-menu-sub {
+  background-color: $primary-color;
+}
+
+.ant-menu-item .ant-menu.ant-menu-dark .ant-menu-item-selected,
+.ant-menu-submenu-popup.ant-menu-dark .ant-menu-item-selected,
+.ant-menu.ant-menu-dark .ant-menu-item-selected,
+.ant-menu-submenu-popup.ant-menu-dark .ant-menu-item-selected {
+  background-color: $secondary-color;
+}

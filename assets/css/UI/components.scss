@@ -1,0 +1,42 @@
+.card-widget {
+  display: flex;
+  margin: 0;
+  position: relative;
+}
+
+.card-widget h2,
+p {
+  margin: 0;
+}
+
+.figcaption {
+  .more {
+    position: absolute;
+    top: 0px;
+    left: 0;
+
+    a {
+      color: #888;
+    }
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 14px;
+    color: #9299b8;
+  }
+}
+
+.card-icon {
+  color: #fff;
+  font-size: 24px
+}
+
+.alert-card,
+.table-card {
+  margin: 1rem;
+}
