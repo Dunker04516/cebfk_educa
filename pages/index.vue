@@ -2,13 +2,13 @@
   <div>
     <AdminPageHeader>
       <template #header>
-        <a-page-header :title="'¡Bienvenido ' + $auth.user.name + '!'" style="padding: 0px" />
+        <a-page-header :title="'¡Bienvenid@ ' + $auth.user.name + '!'" style="padding: 0px" />
       </template>
     </AdminPageHeader>
     <div class="dashboard-page-content-container">
       <perfect-scrollbar style="height: 80vh;" suppressScrollX="true">
         <!--Information Cards para Admin -->
-        <div class="m-30">
+        <div class="m-30" v-if="false">
           <Typography :level="1.4" class="mt-30">Calificaciones Primer parcial</Typography>
           <Typography :level="1" class="mb-30">
             <a-icon type="calendar" />
@@ -144,13 +144,30 @@
 
         <!-- DataTables para Información-->
         <a-row :gutter="[18, 18]" class="m-30">
-          <a-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12">
+          <a-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <a-card title="Asignaciones recientes" :bodyStyle="{ padding: '0px' }">
               <perfect-scrollbar style="height: 400px;">
-                <a-table :columns="columns" :data-source="data" class="table-card">
-
+                <a-table :columns="columns" :data-source="data" class="table-card" :loading="loading"
+                  :pagination="false">
+                  <a-tag slot="asignatura" slot-scope="text" :color="text.color">
+                    {{ text.nombre.toUpperCase() }}
+                  </a-tag>
+                  <a-tag slot="estado" slot-scope="text" :color="text == 'entregado' ? '#4CAF50' : '#FF5252'">
+                    {{ text.toUpperCase() }}
+                  </a-tag>
+                  <template slot="calificacion" slot-scope="qualification">
+                    {{ qualification }} / 10
+                  </template>
+                  <template slot="acciones" slot-scope="id">
+                    <a-button type="primary" @click="entregar(id)" icon="eye" :disabled="loading">
+                      Ver asignación
+                    </a-button>
+                  </template>
                 </a-table>
               </perfect-scrollbar>
+              <template slot="actions" class="ant-card-actions">
+
+              </template>
             </a-card>
           </a-col>
           <a-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12">
@@ -166,6 +183,49 @@
             </a-card>
           </a-col>
         </a-row>
+
+        <a-drawer title="Actividad" :width="720" :visible="visible" :body-style="{ paddingBottom: '80px' }"
+          @close="onClose">
+          <a-form :form="form" layout="vertical" hide-required-mark>
+            <a-row :gutter="24">
+              <a-col :span="24" class="p-10">
+                <h3>Bienvenida al curso de matemáticas</h3>
+                <a-tag color="#FFC107" class="mt-10 mb-10">
+                  Matemáticas I
+                </a-tag>
+                <p class="mt-10 mb-10">
+                  Queridos estudiantes del primer semestre de preparatoria, ¡Bienvenidos al curso de matemáticas!
+                  <br><br>
+                  Soy el profesor José Nucamendi, en este curso aprenderemos un poco de álgebra. <br><br>
+                  Lorem ipsum dolor sit, amet consectetur adipisicing elit. Maxime blanditiis numquam alias veritatis
+                  nobis explicabo, quis accusamus consequatur mollitia, incidunt dolorem sint recusandae tenetur minus.
+                  Inventore tempore eveniet excepturi dolorum!
+                  Architecto eligendi quaerat reiciendis reprehenderit dolore, quae amet sit molestias quasi voluptas
+                  minima rerum ab cum? Totam distinctio pariatur, cupiditate et provident saepe ipsa perferendis animi
+                  sed fugiat hic eos?
+                </p>
+              </a-col>
+            </a-row>
+          </a-form>
+          <div :style="{
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            borderTop: '1px solid #e9e9e9',
+            padding: '10px 16px',
+            background: '#fff',
+            textAlign: 'right',
+            zIndex: 1,
+          }">
+            <a-button :style="{ marginRight: '8px' }" @click="onClose">
+              Cancel
+            </a-button>
+            <a-button type="primary" @click="onClose">
+              Submit
+            </a-button>
+          </div>
+        </a-drawer>
       </perfect-scrollbar>
 
     </div>
@@ -178,94 +238,72 @@ import StateWidget from '../components/UI/controls/StateWidget.vue'
 import Typography from '../components/UI/Typography.vue'
 export default {
   name: 'IndexPage',
+  mounted() {
+    this.getTasks()
+  },
   data() {
     return {
+      loading: false,
+      visible: false,
       mostrar: true,
       columns: [
         {
-          title: 'Name',
-          dataIndex: 'name',
-          key: 'name',
-          scopedSlots: { customRender: 'name' },
+          title: 'Titulo',
+          dataIndex: 'tareas.titulo',
+          key: 1,
+          scopedSlots: { customRender: 'tareas' },
         },
         {
-          title: 'Age',
-          dataIndex: 'age',
-          key: 'age',
-          width: 80,
-        },
-        {
-          title: 'Address',
-          dataIndex: 'address',
-          key: 'address 1',
+          title: 'Asignatura',
+          dataIndex: 'tareas.asignaturas',
+          key: 2,
+          scopedSlots: { customRender: 'asignatura' },
           ellipsis: true,
         },
         {
-          title: 'Long Column Long Column Long Column',
-          dataIndex: 'address',
-          key: 'address 2',
-          ellipsis: true,
+          title: 'Calificacion',
+          dataIndex: 'calificacion',
+          key: 3,
+          scopedSlots: { customRender: 'calificacion' },
         },
         {
-          title: 'Long Column Long Column',
-          dataIndex: 'address',
-          key: 'address 3',
-          ellipsis: true,
+          title: 'Estado',
+          dataIndex: 'estado',
+          key: 4,
+          scopedSlots: { customRender: 'estado' },
         },
         {
-          title: 'Long Column',
-          dataIndex: 'address',
-          key: 'address 4',
-          ellipsis: true,
+          title: 'Fecha de asignación',
+          dataIndex: 'tareas.fecha_asignacion',
+          key: 5,
+          scopedSlots: { customRender: 'asignacion' },
         },
+        {
+          title: 'Fecha de vencimiento',
+          dataIndex: 'tareas.fecha_vencimiento',
+          key: 6,
+          scopedSlots: { customRender: 'vencimiento' },
+        },
+        {
+          title: 'Acciones',
+          dataIndex: 'id',
+          key: 7,
+          scopedSlots: { customRender: 'acciones' },
+        },
+
       ],
-      data: [
-        {
-          key: '1',
-          name: 'John Brown',
-          age: 32,
-          address: 'New York No. 1 Lake Park, New York No. 1 Lake Park',
-          tags: ['nice', 'developer'],
-        },
-        {
-          key: '2',
-          name: 'Jim Green',
-          age: 42,
-          address: 'London No. 2 Lake Park, London No. 2 Lake Park',
-          tags: ['loser'],
-        },
-        {
-          key: '3',
-          name: 'Joe Black',
-          age: 32,
-          address: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',
-          tags: ['cool', 'teacher'],
-        },
-        {
-          key: '4',
-          name: 'Joe Black',
-          age: 32,
-          address: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',
-          tags: ['cool', 'teacher'],
-        },
-        {
-          key: '5',
-          name: 'Joe Black',
-          age: 32,
-          address: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',
-          tags: ['cool', 'teacher'],
-        },
-        {
-          key: '6',
-          name: 'Joe Black',
-          age: 32,
-          address: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',
-          tags: ['cool', 'teacher'],
-        },
-      ]
+      asignacion: {},
+      pagination: [],
+      data: []
     }
   },
   methods: {
+    entregar(id) {
+      this.visible = true
+    },
+    onClose() {
+      this.visible = false
+    },
     changedRangePicker(newValue) {
       console.log(
         newValue[0].startOf('day').utc().format('YYYY-MM-DD HH:mm:ss')
@@ -274,6 +312,38 @@ export default {
         newValue[1].startOf('day').utc().format('YYYY-MM-DD HH:mm:ss')
       )
     },
+    getTasks() {
+      this.loading = true
+      this.$axios.post('/alumnos/tareas')
+        .then((response) => {
+          this.data = (response.data.asignacion.data)
+          console.log(this.pagination)
+        })
+        .catch(error => {
+          if (this.$axios.isCancel(error)) {
+            console.log('Request canceled', error)
+          } else {
+            // handle error
+          }
+        })
+      this.loading = false
+    },
+    getAsignacion() {
+      this.loading = true
+      this.$axios.post('/alumnos/tareas')
+        .then((response) => {
+          this.data = (response.data.asignacion.data)
+          console.log(this.pagination)
+        })
+        .catch(error => {
+          if (this.$axios.isCancel(error)) {
+            console.log('Request canceled', error)
+          } else {
+            // handle error
+          }
+        })
+      this.loading = false
+    }
   },
   components: { AdminPageHeader, StateWidget, Typography },
 }

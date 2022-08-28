@@ -7,7 +7,7 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'CEBFK | Educa',
+    title: 'CEBFK | Catholic Kowalska',
     htmlAttrs: {
       lang: 'es',
     },
@@ -32,7 +32,7 @@ export default {
   },
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ['@/plugins/antd-ui', '@/plugins/vue2-perfectscrollbar'],
+  plugins: ['@/plugins/antd-ui', '@/plugins/vue2-perfectscrollbar', '@/plugins/laravel-vue-pagination'],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -51,7 +51,7 @@ export default {
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
     // Workaround to avoid enforcing hard-coded localhost:3000: https://github.com/nuxt-community/axios-module/issues/308
-    baseURL: 'http://localhost:8000/api',
+    baseURL: 'http://cebfk.com//api',
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
