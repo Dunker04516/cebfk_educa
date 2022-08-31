@@ -147,19 +147,29 @@
           <a-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <a-card title="Asignaciones recientes" :bodyStyle="{ padding: '0px' }">
               <perfect-scrollbar style="height: 400px;">
-                <a-table :columns="columns" :data-source="data" class="table-card" :loading="loading"
+                <a-table rowKey="id" :columns="columns" :data-source="data" class="table-card" :loading="loading"
                   :pagination="false">
                   <a-tag slot="asignatura" slot-scope="text" :color="text.color">
-                    {{ text.nombre.toUpperCase() }}
+                    {{  text.nombre.toUpperCase()  }}
                   </a-tag>
                   <a-tag slot="estado" slot-scope="text" :color="text == 'entregado' ? '#4CAF50' : '#FF5252'">
-                    {{ text.toUpperCase() }}
+                    {{  text.toUpperCase()  }}
                   </a-tag>
                   <template slot="calificacion" slot-scope="qualification">
-                    {{ qualification }} / 10
+                    {{  qualification  }} / 10
+                  </template>
+                  <template slot="asignacion" slot-scope="text">
+                    <a-tag color="#64DD17">
+                      {{  text  }}
+                    </a-tag>
+                  </template>
+                  <template slot="vencimiento" slot-scope="text">
+                    <a-tag color="#DD2C00">
+                      {{  text  }}
+                    </a-tag>
                   </template>
                   <template slot="acciones" slot-scope="id">
-                    <a-button type="primary" @click="entregar(id)" icon="eye" :disabled="loading">
+                    <a-button type="primary" @click="ver(id)" icon="eye" :disabled="loading">
                       Ver asignación
                     </a-button>
                   </template>
@@ -170,7 +180,7 @@
               </template>
             </a-card>
           </a-col>
-          <a-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12">
+          <a-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12" v-if="false">
             <a-card title="Avisos" :bodyStyle="{ padding: '0px' }">
               <perfect-scrollbar style="height: 400px;">
                 <template v-for="n in 8">
@@ -183,27 +193,41 @@
             </a-card>
           </a-col>
         </a-row>
-
-        <a-drawer title="Actividad" :width="720" :visible="visible" :body-style="{ paddingBottom: '80px' }"
-          @close="onClose">
-          <a-form :form="form" layout="vertical" hide-required-mark>
+        <!-- Drawer para entrega de tareas-->
+        <a-drawer title="Actividad" v-if="asignacion.entrega" :width="720" :visible="visible"
+          :body-style="{ paddingBottom: '80px' }" @close="onClose">
+          <a-form layout="vertical" hide-required-mark>
             <a-row :gutter="24">
               <a-col :span="24" class="p-10">
-                <h3>Bienvenida al curso de matemáticas</h3>
-                <a-tag color="#FFC107" class="mt-10 mb-10">
-                  Matemáticas I
+                <h3>{{  asignacion.entrega.tareas.titulo  }}</h3>
+                <a-tag :color="asignacion.asignatura.color" class="mt-10 mb-10">
+                  {{  asignacion.asignatura.nombre  }}
                 </a-tag>
-                <p class="mt-10 mb-10">
-                  Queridos estudiantes del primer semestre de preparatoria, ¡Bienvenidos al curso de matemáticas!
-                  <br><br>
-                  Soy el profesor José Nucamendi, en este curso aprenderemos un poco de álgebra. <br><br>
-                  Lorem ipsum dolor sit, amet consectetur adipisicing elit. Maxime blanditiis numquam alias veritatis
-                  nobis explicabo, quis accusamus consequatur mollitia, incidunt dolorem sint recusandae tenetur minus.
-                  Inventore tempore eveniet excepturi dolorum!
-                  Architecto eligendi quaerat reiciendis reprehenderit dolore, quae amet sit molestias quasi voluptas
-                  minima rerum ab cum? Totam distinctio pariatur, cupiditate et provident saepe ipsa perferendis animi
-                  sed fugiat hic eos?
-                </p>
+                <a-tag :color="asignacion.entrega.archivo == null ? '#DD2C00' : '#4CAF50'" class="mt-10 mb-10">
+                  <span v-if="asignacion.entrega.archivo == null">
+                    <strong>Vencimiento: </strong>
+                    {{  asignacion.entrega.tareas.fecha_vencimiento  }}
+                  </span>
+                  <span v-else>
+                    <strong>
+                      Entregada
+                    </strong>
+                  </span>
+                </a-tag>
+                <p><strong>Calificacion:</strong> {{  asignacion.entrega.calificacion  }} / 10</p>
+                <div class="mt-10 mb-10 text-justify" v-html="asignacion.entrega.tareas.descripcion">
+                </div>
+
+                <a-upload name="file" :data="appends" :beforeUpload="setAppends" :multiple="false"
+                  @change="handleUpload" v-if="asignacion.entrega.archivo == null" accept="application/pdf"
+                  :action="asignacion.url_tareas" :headers="headers">
+                  <a-button>
+                    <a-icon type="upload" /> Click to Upload
+                  </a-button>
+                </a-upload>
+                <a-button v-else>
+                  <a-icon type="download" /> {{  asignacion.entrega.alias  }}
+                </a-button>
               </a-col>
             </a-row>
           </a-form>
@@ -292,57 +316,63 @@ export default {
         },
 
       ],
-      asignacion: {},
-      pagination: [],
-      data: []
+      asignacion: [],
+      data: [],
+      appends: {},
+      headers: {
+        authorization: this.$auth.getToken('local'),
+      },
     }
   },
   methods: {
-    entregar(id) {
+    async ver(id) {
+      await this.getAsignacion(id)
       this.visible = true
     },
     onClose() {
       this.visible = false
     },
-    changedRangePicker(newValue) {
-      console.log(
-        newValue[0].startOf('day').utc().format('YYYY-MM-DD HH:mm:ss')
-      )
-      console.log(
-        newValue[1].startOf('day').utc().format('YYYY-MM-DD HH:mm:ss')
-      )
-    },
     getTasks() {
       this.loading = true
-      this.$axios.post('/alumnos/tareas')
+      this.$axios.post('alumnos/tareas')
         .then((response) => {
           this.data = (response.data.asignacion.data)
-          console.log(this.pagination)
         })
         .catch(error => {
           if (this.$axios.isCancel(error)) {
-            console.log('Request canceled', error)
           } else {
             // handle error
           }
         })
       this.loading = false
     },
-    getAsignacion() {
+    async getAsignacion(asignacion) {
       this.loading = true
-      this.$axios.post('/alumnos/tareas')
+      await this.$axios.post('alumnos/tareas/asignacion', {
+        id: asignacion,
+      })
         .then((response) => {
-          this.data = (response.data.asignacion.data)
-          console.log(this.pagination)
+          this.asignacion = (response.data)
         })
         .catch(error => {
           if (this.$axios.isCancel(error)) {
-            console.log('Request canceled', error)
           } else {
             // handle error
           }
         })
       this.loading = false
+    },
+    setAppends() {
+      this.appends = {
+        asignacion: this.asignacion.entrega.id,
+      }
+
+    },
+    handleUpload(info) {
+      if (info.file.status == 'done') {
+        this.getTasks()
+        this.visible = false
+      }
     }
   },
   components: { AdminPageHeader, StateWidget, Typography },

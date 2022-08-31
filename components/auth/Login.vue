@@ -60,11 +60,12 @@ export default {
         let response = await this.$auth.loginWith('local', {
           data: this.credentials,
         })
+        console.log(response)
         this.loading = false
         this.$router.push('/')
       } catch (error) {
         this.loading = false
-
+        console.log(error)
         if (error.response) {
           this.status = error.response.status
           if (this.status == 401) {
