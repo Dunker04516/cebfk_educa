@@ -41,7 +41,6 @@ export default {
         'UI/sidebarToggle',
         !this.$store.state.UI.Sidebar.collapsed
       )
-      console.log('Colapsado: ' + this.$store.state.UI.Sidebar.collapsed)
     },
   },
 }
