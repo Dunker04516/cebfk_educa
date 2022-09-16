@@ -142,8 +142,8 @@
         <a-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
           <a-card title="Asignaciones recientes" :bodyStyle="{ padding: '0px' }">
             <perfect-scrollbar style="height: 400px;">
-              <a-table rowKey="id" :columns="columns" :data-source="data" class="table-card" :loading="loading"
-                :pagination="false">
+              <a-table :scroll="{ x: 1500}" rowKey="id" :columns="columns" :data-source="data" class="table-card"
+                :loading="loading" :pagination="false">
                 <a-tag slot="asignatura" slot-scope="text" :color="text.color">
                   {{ text.nombre.toUpperCase() }}
                 </a-tag>
@@ -194,8 +194,8 @@
         <a-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
           <a-card title="Asignaciones calificadas" :bodyStyle="{ padding: '0px' }">
             <perfect-scrollbar style="height: 400px;">
-              <a-table rowKey="id" :columns="columns" :data-source="calificadas" class="table-card" :loading="loading"
-                :pagination="false">
+              <a-table :scroll="{ x: 1500}" rowKey="id" :columns="columns" :data-source="calificadas" class="table-card"
+                :loading="loading" :pagination="false">
                 <a-tag slot="asignatura" slot-scope="text" :color="text.color">
                   {{ text.nombre.toUpperCase() }}
                 </a-tag>
@@ -339,6 +339,8 @@ export default {
   },
   data() {
     return {
+      nueva_asignacion: [],
+      nueva_asignacion_visible: false,
       loading: false,
       visible: false,
       mostrar: true,
@@ -401,7 +403,7 @@ export default {
     onClose() {
       this.visible = false
     },
-    getCalificadas(){
+    getCalificadas() {
       this.loading = true
       this.$axios.post('alumnos/tareas/calificadas')
         .then((response) => {

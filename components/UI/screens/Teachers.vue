@@ -1,13 +1,19 @@
 <template>
   <div class="dashboard-page-content-container">
-    <perfect-scrollbar style="height: 80vh;" suppressScrollX="true">
+    <perfect-scrollbar style="height: 80vh;" suppressScrollX="true" ref="main_content">
+      <a-row :gutter="[18, 18]" class="m-30 text-right">
+        <a-button type="primary" @click="asignacion_visible = true" class="ml-25 mt-10">
+          Nueva asignacion
+        </a-button>
+      </a-row>
+
       <!-- DataTables para Información-->
       <a-row :gutter="[18, 18]" class="m-30">
         <a-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
           <a-card title="Pendientes de calificación" :bodyStyle="{ padding: '0px' }">
             <perfect-scrollbar style="height: 400px;">
               <a-table rowKey="id" :columns="columns" :data-source="data" class="table-card" :loading="loading"
-                :pagination="false">
+                :scroll="{ x: 1500}" :pagination="false">
                 <template slot="alumno" slot-scope="text" :color="text.color">
                   {{ text.name + " " + text.l_name }}
                 </template>
@@ -62,7 +68,7 @@
           <a-card title="Calificadas" :bodyStyle="{ padding: '0px' }">
             <perfect-scrollbar style="height: 400px;">
               <a-table rowKey="id" :columns="columns" :data-source="calificadas" class="table-card" :loading="loading"
-                :pagination="false">
+                :scroll="{ x: 1500}" :pagination="false">
                 <template slot="alumno" slot-scope="text" :color="text.color">
                   {{ text.name + " " + text.l_name }}
                 </template>
@@ -110,7 +116,7 @@
           </a-card>
         </a-col>
       </a-row>
-      <!-- Drawer para entrega de tareas-->
+      <!-- Drawer para revisión de tareas-->
       <a-drawer title="Calificación de Actividad" v-if="asignacion.entrega" :width="720" :visible="visible"
         :body-style="{ paddingBottom: '80px' }" @close="onClose">
         <a-form layout="vertical" hide-required-mark>
@@ -184,6 +190,76 @@
           </a-button>
         </div>
       </a-drawer>
+
+      <!-- Drawer para creación de tareas-->
+      <a-drawer title="Nueva asignación" :width="720" :visible="asignacion_visible"
+        :body-style="{ paddingBottom: '80px' }" @close="asignacion_visible =  false">
+        <a-form layout="vertical" hide-required-mark ref="form">
+          <a-row :gutter="24">
+            <a-col :span="24" class="p-10">
+              <p class="mt-10 mb-10">
+                <strong>Mis materias</strong>
+              </p>
+              <a-select v-model:value="nueva_asignacion.asignatura" placeholder="Seleccionar materia">
+                <a-select-option :value="materias.asignaturas.id" v-for="materias in $auth.user.materias"
+                  :key="materias.id" default-value>
+                  <a-tag :color="materias.asignaturas.color">
+                    {{materias.asignaturas.nombre}}
+                  </a-tag>
+                </a-select-option>
+              </a-select>
+              <p class="mt-10 mb-10">
+                <strong>Titulo</strong>
+              </p>
+              <a-input placeholder="Titulo de la asignación" v-model="nueva_asignacion.titulo"></a-input>
+              <p class="mt-10 mb-10">
+                <strong>Descripción</strong>
+              </p>
+              <a-textarea placeholder="Escribe tus las indicaciones de la asignación aquí" :rows="4"
+                v-model="nueva_asignacion.descripcion" />
+              <p class="mt-10 mb-10">
+                <strong>Archivo</strong>
+              </p>
+              <a-upload name="file" :beforeUpload="setPDF" :multiple="false" accept="application/pdf">
+                <a-button>
+                  <a-icon type="upload" /> Seleccionar archivo
+                </a-button>
+              </a-upload>
+              <p class="mt-10 mb-10">
+                <strong>Imagen</strong>
+              </p>
+              <a-upload name="file" :beforeUpload="setImg" :multiple="false" accept="image/*">
+                <a-button>
+                  <a-icon type="upload" /> Seleccionar archivo
+                </a-button>
+              </a-upload>
+              <p class="mt-10 mb-10">
+                <strong>Fecha de vencimiento</strong>
+              </p>
+              <a-date-picker :format="dateFormat" style="width: 100%" :disabled-date="disabledDate"
+                v-model="nueva_asignacion.fecha_vencimiento" />
+            </a-col>
+          </a-row>
+        </a-form>
+        <div :style="{
+          position: 'absolute',
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          borderTop: '1px solid #e9e9e9',
+          padding: '10px 16px',
+          background: '#fff',
+          textAlign: 'right',
+          zIndex: 1,
+        }">
+          <a-button type="primary" :style="{ marginRight: '8px' }" @click="crear_asignacion">
+            Crear asignación
+          </a-button>
+          <a-button type="danger" :style="{ marginRight: '8px' }" @click="onClose">
+            Cerrar
+          </a-button>
+        </div>
+      </a-drawer>
     </perfect-scrollbar>
     {{calificacion}}
   </div>
@@ -193,17 +269,18 @@
 import AdminPageHeader from '../AdminPageHeader.vue'
 import StateWidget from '../controls/StateWidget.vue'
 import Typography from '../Typography.vue'
+import moment from 'moment';
 export default {
   name: 'IndexPage',
   computed: {
     calificacion() {
-      if(this.asignacion.entrega){
+      if (this.asignacion.entrega) {
         return this.asignacion.entrega.calificacion;
       }
       return 0
     },
-    observaciones(){
-      if(this.asignacion.entrega){
+    observaciones() {
+      if (this.asignacion.entrega) {
         return this.asignacion.entrega.observaciones;
       }
       return null
@@ -215,53 +292,57 @@ export default {
   },
   data() {
     return {
+      materias: [],
+      asignacion_visible: false,
+      nueva_asignacion: [],
       loading: false,
       visible: false,
       mostrar: true,
       waiting: false,
       columns: [
-          {
-            title: 'Alumno',
-            dataIndex: 'estudiantes.usuario',
-            scopedSlots: { customRender: 'alumno' },
-          },
-          {
-            title: 'Titulo',
-            dataIndex: 'tareas.titulo',
-            scopedSlots: { customRender: 'tareas' },
-          },
-          {
-            title: 'Asignatura',
-            dataIndex: 'tareas.asignaturas',
-            scopedSlots: { customRender: 'asignatura' },
-            ellipsis: true,
-          },
-          {
-            title: 'Calificacion',
-            dataIndex: 'calificacion',
-            scopedSlots: { customRender: 'calificacion' },
-          },
-          {
-            title: 'Estado',
-            dataIndex: 'estado',
-            scopedSlots: { customRender: 'estado' },
-          },
-          {
-            title: 'Fecha de asignación',
-            dataIndex: 'tareas.fecha_asignacion',
-            scopedSlots: { customRender: 'asignacion' },
-          },
-          {
-            title: 'Fecha de vencimiento',
-            dataIndex: 'tareas.fecha_vencimiento',
-            scopedSlots: { customRender: 'vencimiento' },
-          },
-          {
-            title: 'Acciones',
-            dataIndex: 'id',
-            scopedSlots: { customRender: 'acciones' },
-          },
+        {
+          title: 'Alumno',
+          dataIndex: 'estudiantes.usuario',
+          scopedSlots: { customRender: 'alumno' },
+        },
+        {
+          title: 'Titulo',
+          dataIndex: 'tareas.titulo',
+          scopedSlots: { customRender: 'tareas' },
+        },
+        {
+          title: 'Asignatura',
+          dataIndex: 'tareas.asignaturas',
+          scopedSlots: { customRender: 'asignatura' },
+          ellipsis: true,
+        },
+        {
+          title: 'Calificacion',
+          dataIndex: 'calificacion',
+          scopedSlots: { customRender: 'calificacion' },
+        },
+        {
+          title: 'Estado',
+          dataIndex: 'estado',
+          scopedSlots: { customRender: 'estado' },
+        },
+        {
+          title: 'Fecha de asignación',
+          dataIndex: 'tareas.fecha_asignacion',
+          scopedSlots: { customRender: 'asignacion' },
+        },
+        {
+          title: 'Fecha de vencimiento',
+          dataIndex: 'tareas.fecha_vencimiento',
+          scopedSlots: { customRender: 'vencimiento' },
+        },
+        {
+          title: 'Acciones',
+          dataIndex: 'id',
+          scopedSlots: { customRender: 'acciones' },
+        },
       ],
+      dateFormat: "YYYY-MM-DD",
       asignacion: [],
       calificadas: [],
       data: [],
@@ -269,9 +350,14 @@ export default {
       headers: {
         authorization: this.$auth.getToken('local'),
       },
+
     }
   },
   methods: {
+    disabledDate(current) {
+      // Can not select days before today and today
+      return current && current < moment().endOf('day');
+    },
     async ver(id) {
       await this.getAsignacion(id)
       this.getTasks()
@@ -282,7 +368,7 @@ export default {
       this.visible = false
       this.calificacion = 0
     },
-    getCalificadas(){
+    getCalificadas() {
       this.loading = true
       this.calificadas
 
@@ -303,6 +389,7 @@ export default {
       this.$axios.post('/profesores/asignaciones')
         .then((response) => {
           this.data = (response.data.asignaciones)
+          console.log(this.data)
         })
         .catch(error => {
           if (this.$axios.isCancel(error)) {
@@ -341,7 +428,7 @@ export default {
         this.visible = false
       }
     },
-    async calificar(asignacion){
+    async calificar(asignacion) {
       this.loading = true
       await this.$axios.post('profesores/asignaciones/calificar', {
         id: asignacion,
@@ -390,6 +477,38 @@ export default {
       setTimeout(() => {
         this.waiting = false
       }, 2500);
+    },
+    setPDF(file) {
+      this.nueva_asignacion.archivo = file
+    },
+    setImg(file) {
+      this.nueva_asignacion.imagen = file
+    },
+    async crear_asignacion() {
+      this.loading = true
+      var vencimiento = moment(this.nueva_asignacion.fecha_vencimiento).format("YYYY-MM-DD")
+
+      await this.$axios.post('profesores/asignaciones/crear', {
+        titulo: this.nueva_asignacion.titulo,
+        descripcion: this.nueva_asignacion.descripcion,
+        archivo: this.nueva_asignacion.archivo,
+        imagen: this.nueva_asignacion.imagen,
+        asignatura: this.nueva_asignacion.asignatura,
+        fecha_vencimiento: vencimiento,
+      })
+        .then((response) => {
+          this.onClose();
+          this.getTasks();
+          this.getCalificadas();
+        })
+        .catch(error => {
+          if (this.$axios.isCancel(error)) {
+          } else {
+            // handle error
+          }
+        })
+      this.asignacion_visible = false;
+      this.loading = false
     }
   },
   components: { AdminPageHeader, StateWidget, Typography },
