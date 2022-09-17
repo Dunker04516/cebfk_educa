@@ -6,7 +6,6 @@
           Nueva asignacion
         </a-button>
       </a-row>
-
       <!-- DataTables para Información-->
       <a-row :gutter="[18, 18]" class="m-30">
         <a-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
@@ -117,7 +116,7 @@
         </a-col>
       </a-row>
       <!-- Drawer para revisión de tareas-->
-      <a-drawer title="Calificación de Actividad" v-if="asignacion.entrega" :width="720" :visible="visible"
+      <a-drawer title="Calificar Actividad" v-if="asignacion.entrega" :width="720" :visible="visible"
         :body-style="{ paddingBottom: '80px' }" @close="onClose">
         <a-form layout="vertical" hide-required-mark>
           <a-row :gutter="24">
@@ -148,6 +147,21 @@
               <a-alert v-if="asignacion.entrega.fecha_calificacion != null" class="mb-20 mt-20"
                 :message="'Calificado el: ' + asignacion.entrega.fecha_calificacion" show-icon type="success" />
               <hr>
+              <img v-if="asignacion.entrega.tareas.imagen" :src="asignacion.entrega.tareas.imagen" width="100%"
+                :alt="asignacion.entrega.tareas.titulo">
+              <hr>
+              <template v-if="asignacion.entrega.tareas.archivo">
+                <p class="mt-10 mb-10">
+                  <strong>Archivos de la asignación</strong>
+                </p>
+                <a-button @click="downloadPDF(asignacion.entrega.tarea, asignacion.entrega.tareas.archivo_alias)"
+                  :disabled="waiting">
+                  <a-icon type="download" /> {{ asignacion.entrega.tareas.archivo_alias }} {{ waiting ? "(Descargado" +
+                  " archivo)"
+                  : '' }}
+                </a-button>
+              </template>
+              <hr>
               <p class="mt-10 mb-10">
                 <strong>Descripción de la actividad</strong>
               </p>
@@ -155,11 +169,12 @@
               </div>
               <hr>
               <p class="mt-10 mb-10">
-                <strong>Archivos</strong>
+                <strong>Archivos del alumno</strong>
               </p>
               <a-alert class="mb-20 mt-20" v-if="!asignacion.entrega.archivo"
                 message="¡El alumno aún no ha subido ningún archivo!" type="info" show-icon />
-              <a-button @click="download(asignacion.entrega.id, asignacion.entrega.alias)" :disabled="waiting" v-else>
+              <a-button @click="download(asignacion.entrega.tarea, asignacion.entrega.alias)" :disabled="waiting"
+                v-else>
                 <a-icon type="download" /> {{ asignacion.entrega.alias }} {{ waiting ? '(Descargado archivo)' : '' }}
               </a-button>
               <hr>
@@ -193,7 +208,7 @@
 
       <!-- Drawer para creación de tareas-->
       <a-drawer title="Nueva asignación" :width="720" :visible="asignacion_visible"
-        :body-style="{ paddingBottom: '80px' }" @close="asignacion_visible =  false">
+        :body-style="{ paddingBottom: '80px' }" @close="cerrar_asignacion">
         <a-form layout="vertical" hide-required-mark ref="form">
           <a-row :gutter="24">
             <a-col :span="24" class="p-10">
@@ -252,7 +267,7 @@
           textAlign: 'right',
           zIndex: 1,
         }">
-          <a-button type="primary" :style="{ marginRight: '8px' }" @click="crear_asignacion">
+          <a-button type="primary" :style="{ marginRight: '8px' }" @click="crear_asignacion" :disabled="loading">
             Crear asignación
           </a-button>
           <a-button type="danger" :style="{ marginRight: '8px' }" @click="onClose">
@@ -368,6 +383,10 @@ export default {
       this.visible = false
       this.calificacion = 0
     },
+    cerrar_asignacion() {
+      this.asignacion_visible = false;
+      this.nueva_asignacion = {};
+    },
     getCalificadas() {
       this.loading = true
       this.calificadas
@@ -389,7 +408,6 @@ export default {
       this.$axios.post('/profesores/asignaciones')
         .then((response) => {
           this.data = (response.data.asignaciones)
-          console.log(this.data)
         })
         .catch(error => {
           if (this.$axios.isCancel(error)) {
@@ -406,7 +424,6 @@ export default {
       })
         .then((response) => {
           this.asignacion = (response.data)
-          console.log(this.asignacion)
         })
         .catch(error => {
           if (this.$axios.isCancel(error)) {
@@ -457,8 +474,38 @@ export default {
         },
         responseType: 'blob',
       }
-      this.$axios.post('alumnos/tareas/descargar', {
+      this.$axios.post('profesores/asignaciones/descargar', {
         id: asignacion
+      }, postConfig)
+        .then((response) => {
+          let blob = new Blob([response.data], { type: 'application/pdf' })
+          let link = document.createElement('a')
+          link.href = window.URL.createObjectURL(blob)
+          link.download = alias
+          link.click()
+        })
+        .catch(error => {
+          if (this.$axios.isCancel(error)) {
+          } else {
+            // handle error
+          }
+        })
+      this.loading = false
+      setTimeout(() => {
+        this.waiting = false
+      }, 2500);
+    },
+    downloadPDF(tarea, alias) {
+      this.loading = true
+      this.waiting = true
+      let postConfig = {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        responseType: 'blob',
+      }
+      this.$axios.post('profesores/asignaciones/descargar_pdf', {
+        id: tarea
       }, postConfig)
         .then((response) => {
           let blob = new Blob([response.data], { type: 'application/pdf' })
@@ -480,22 +527,25 @@ export default {
     },
     setPDF(file) {
       this.nueva_asignacion.archivo = file
+      return false
     },
     setImg(file) {
       this.nueva_asignacion.imagen = file
+      return false
     },
     async crear_asignacion() {
       this.loading = true
       var vencimiento = moment(this.nueva_asignacion.fecha_vencimiento).format("YYYY-MM-DD")
+      var formData = new FormData();
+      formData.append('archivo', this.nueva_asignacion.archivo);
+      formData.append('titulo', this.nueva_asignacion.titulo);
+      formData.append('descripcion', this.nueva_asignacion.descripcion);
+      formData.append('imagen', this.nueva_asignacion.imagen);
+      formData.append('asignatura', this.nueva_asignacion.asignatura);
+      formData.append('fecha_vencimiento', vencimiento);
 
-      await this.$axios.post('profesores/asignaciones/crear', {
-        titulo: this.nueva_asignacion.titulo,
-        descripcion: this.nueva_asignacion.descripcion,
-        archivo: this.nueva_asignacion.archivo,
-        imagen: this.nueva_asignacion.imagen,
-        asignatura: this.nueva_asignacion.asignatura,
-        fecha_vencimiento: vencimiento,
-      })
+
+      await this.$axios.post('profesores/asignaciones/crear', formData)
         .then((response) => {
           this.onClose();
           this.getTasks();
@@ -509,6 +559,7 @@ export default {
         })
       this.asignacion_visible = false;
       this.loading = false
+      this.nueva_asignacion = []
     }
   },
   components: { AdminPageHeader, StateWidget, Typography },

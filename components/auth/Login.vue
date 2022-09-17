@@ -15,8 +15,8 @@
                 <a-form-item label="Correo electrónico" name="email" :help="
                   rules.email ? rules.email.message : null
                 " :validateStatus="
-  rules.email ? 'error' : null
-">
+                  rules.email ? 'error' : null
+                ">
                   <a-input v-model:value="credentials.email" @pressEnter="onSubmit" :disabled="loading"
                     placeholder="Por favor, ingrese correo electrónico" />
                 </a-form-item>
@@ -26,8 +26,8 @@
                     ? rules.password.message
                     : null
                 " :validateStatus="
-  rules.password ? 'error' : null
-">
+                  rules.password ? 'error' : null
+                ">
                   <a-input-password v-model:value="credentials.password" @pressEnter="onSubmit" :disabled="loading"
                     placeholder="Por favor, ingrese su contraseña" />
                 </a-form-item>
@@ -60,12 +60,10 @@ export default {
         let response = await this.$auth.loginWith('local', {
           data: this.credentials,
         })
-        console.log(response)
         this.loading = false
         this.$router.push('/')
       } catch (error) {
         this.loading = false
-        console.log(error)
         if (error.response) {
           this.status = error.response.status
           if (this.status == 401) {

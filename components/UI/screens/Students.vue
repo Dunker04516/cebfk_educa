@@ -264,6 +264,20 @@
               </a-tag>
               <p><strong>Calificacion:</strong> {{ asignacion.entrega.calificacion }} / 10</p>
               <hr>
+              <img :src="asignacion.entrega.tareas.imagen" :alt="asignacion.asignatura.nombre" width="100%">
+              <hr>
+              <template v-if="asignacion.entrega.tareas.archivo">
+                <p class="mt-10 mb-10">
+                  <strong>Archivos de la asignación</strong>
+                </p>
+                <a-button @click="downloadPDF(asignacion.entrega.tarea, asignacion.entrega.tareas.archivo_alias)"
+                  :disabled="waiting">
+                  <a-icon type="download" /> {{ asignacion.entrega.tareas.archivo_alias }} {{ waiting ? "(Descargado" +
+                  " archivo)"
+                  : '' }}
+                </a-button>
+              </template>
+              <hr>
               <p class="mt-10 mb-10">
                 <strong>
                   Descripción de la actividad
@@ -274,10 +288,9 @@
               <hr>
               <p class="mt-10 mb-10">
                 <strong>
-                  Archivos
+                  Archivos del Alumno
                 </strong>
               </p>
-
               <a-upload name="file" :data="appends" :beforeUpload="setAppends" :multiple="false" @change="handleUpload"
                 v-if="asignacion.entrega.archivo == null && asignacion.entrega.fecha_calificacion == null"
                 accept="application/pdf" :action="asignacion.url_tareas" :headers="headers">
@@ -470,6 +483,36 @@ export default {
       }
       this.$axios.post('alumnos/tareas/descargar', {
         id: asignacion
+      }, postConfig)
+        .then((response) => {
+          let blob = new Blob([response.data], { type: 'application/pdf' })
+          let link = document.createElement('a')
+          link.href = window.URL.createObjectURL(blob)
+          link.download = alias
+          link.click()
+        })
+        .catch(error => {
+          if (this.$axios.isCancel(error)) {
+          } else {
+            // handle error
+          }
+        })
+      this.loading = false
+      setTimeout(() => {
+        this.waiting = false
+      }, 2500);
+    },
+    downloadPDF(tarea, alias) {
+      this.loading = true
+      this.waiting = true
+      let postConfig = {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        responseType: 'blob',
+      }
+      this.$axios.post('alumnos/tareas/descargar_pdf', {
+        id: tarea
       }, postConfig)
         .then((response) => {
           let blob = new Blob([response.data], { type: 'application/pdf' })
