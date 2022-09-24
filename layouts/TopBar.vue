@@ -1,12 +1,13 @@
 <template>
   <a-layout-header :style="{ padding: '0 16px' }" class="bg-eco-light">
     <a-row>
-      <a-col :span="12">
+      <a-col :span="4">
         <a-space>
-          <a-icon class="trigger" type="menu" :style="{ fontSize: '1rem' }" @click="collapseSidebar()" />
+          <a-icon class="trigger" type="menu" :style="{ fontSize: '1rem' }" @click="collapseSidebar()"
+            v-if="$store.state.UI.Window.width > 700" />
         </a-space>
       </a-col>
-      <a-col :span="12" style="display: flex; justify-content: flex-end; align-items: center">
+      <a-col :span="20" class="topbar-menu">
         <Typography :level="1">CEBFK</Typography>
         <a-divider type="vertical" />
         <a-dropdown placement="bottomRight">
@@ -47,4 +48,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.topbar-menu {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center
+}
 </style>

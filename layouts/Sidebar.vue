@@ -15,8 +15,9 @@
     </div>
     <div class="main-sidebar">
       <perfect-scrollbar>
-        <a-menu class="bg-eco-primary" theme="dark" mode="inline" :style="{ borderRight: 'none' }"
-          :inline-collapsed="collapsed" :open-keys="openKeys" @openChange="onOpenChange">
+        <a-menu class="bg-eco-primary" theme="dark" :mode="collapsed ? 'vertical' : 'inline'"
+          :style="{ borderRight: 'none' }" :inline-collapsed="collapsed" :open-keys="openKeys"
+          @openChange="onOpenChange">
           <a-menu-item>
             <a-icon type="home" :style="{ fontSize: '16px' }" />
             <span>Menú principal</span>
@@ -33,6 +34,9 @@
 
 <script>
 export default {
+  created() {
+    window.addEventListener('resize', this.onResize)
+  },
   data() {
     return {
       rootSubmenuKeys: ['sub1', 'sub2', 'sub3', 'sub4', 'sub5', 'sub6'],
@@ -40,6 +44,12 @@ export default {
     }
   },
   methods: {
+    onResize() {
+      this.$store.commit(
+        'UI/windowResize',
+        window.innerWidth
+      )
+    },
     onOpenChange(openKeys) {
       const latestOpenKey = openKeys.find(
         (key) => this.openKeys.indexOf(key) === -1
