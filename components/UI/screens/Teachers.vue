@@ -426,6 +426,7 @@ export default {
           this.asignacion = (response.data)
         })
         .catch(error => {
+          this.$auth.logout();
           if (this.$axios.isCancel(error)) {
           } else {
             // handle error
